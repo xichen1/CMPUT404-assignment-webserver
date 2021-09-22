@@ -1,10 +1,9 @@
 #  coding: utf-8 
-from genericpath import isdir, isfile
 import socketserver
-from os import getcwd, path, stat_result
+from os import getcwd, path
 import os
 
-# Copyright 2013 Abram Hindle, Eddie Antonio Santos
+# Copyright 2013 Abram Hindle, Eddie Antonio Santos, Xichen Pan
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,7 +39,7 @@ error404 = '''
 class MyWebServer(socketserver.BaseRequestHandler):
     response = ""
 
-    #REF: https://security.openstack.org/guidelines/dg_using-file-paths.html
+    #reference: https://security.openstack.org/guidelines/dg_using-file-paths.html
     def is_safe_path(self, basedir, path):
         # resolves symbolic links
         matchpath = os.path.realpath(path)
@@ -50,17 +49,23 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n" + error404 + "\r\n"
         return
 
+    # When the request item type is file
     def handleFile(self, filePath):
+        # identify it requires .html or .css
         _name, extension = os.path.splitext(filePath)
         htmlFile = open(filePath)
         if(extension == ".html"):
             self.response = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n" + htmlFile.read() + "\r\n"
         elif(extension == ".css"):
             self.response = "HTTP/1.1 200 OK\r\nContent-Type: text/css; charset=utf-8\r\n\r\n" + htmlFile.read() + "\r\n"
+        else:
+            self.status404()
         htmlFile.close()
         return
     
+    # When the request item type is dir
     def handleDir(self, filePath, requestUrl):
+        # redirect the the url end with /
         if(requestUrl[-1] != "/"):
             newLocation = "http://127.0.0.1:8080" + requestUrl + "/"
             self.response = "HTTP/1.1 301 Moved Permanently\r\nLocation: " + newLocation + "\r\n"
@@ -76,7 +81,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
     def handleUrl(self, requestList):
         requestUrl = requestList[0].split()[1]
         filePath = "www" + requestUrl
-        if(self.is_safe_path(getcwd() + "/www", getcwd() + "/www" + requestUrl) == False):
+        # if it goes outside ./www dir
+        if(self.is_safe_path(path.join(getcwd(), "www"), path.join(getcwd(), "www" + requestUrl)) == False):
             self.status404()
             return
         if(path.isdir(filePath)):
@@ -99,11 +105,12 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
     def handle(self):
         self.data = self.request.recv(1024).strip()
-        # print ("Got a request of: %s\n" % self.data)
 
-        requestList = self.data.decode("utf-8").split('\n')
-        self.handleRequestType(requestList)
-    
+        if(len(self.data) > 0):
+            requestList = self.data.decode("utf-8").split('\n')
+            self.handleRequestType(requestList)
+        else:
+            print("Bad request")
         self.request.sendall(bytearray(self.response,'utf-8'))
 
 if __name__ == "__main__":
