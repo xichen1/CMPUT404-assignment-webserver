@@ -106,12 +106,13 @@ class MyWebServer(socketserver.BaseRequestHandler):
     def handle(self):
         self.data = self.request.recv(1024).strip()
 
+        # only send response when request is valid
         if(len(self.data) > 0):
             requestList = self.data.decode("utf-8").split('\n')
             self.handleRequestType(requestList)
+            self.request.sendall(bytearray(self.response,'utf-8'))
         else:
             print("Bad request")
-        self.request.sendall(bytearray(self.response,'utf-8'))
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
