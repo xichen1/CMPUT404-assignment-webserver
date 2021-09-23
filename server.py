@@ -52,6 +52,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
     # When the request item type is file
     def handleFile(self, filePath):
         # identify it requires .html or .css
+        # reference: https://stackoverflow.com/a/541394
         _name, extension = os.path.splitext(filePath)
         webFile = open(filePath)
         if(extension == ".html"):
