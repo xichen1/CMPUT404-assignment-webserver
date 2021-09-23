@@ -53,14 +53,14 @@ class MyWebServer(socketserver.BaseRequestHandler):
     def handleFile(self, filePath):
         # identify it requires .html or .css
         _name, extension = os.path.splitext(filePath)
-        htmlFile = open(filePath)
+        webFile = open(filePath)
         if(extension == ".html"):
-            self.response = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n" + htmlFile.read() + "\r\n"
+            self.response = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n" + webFile.read() + "\r\n"
         elif(extension == ".css"):
-            self.response = "HTTP/1.1 200 OK\r\nContent-Type: text/css; charset=utf-8\r\n\r\n" + htmlFile.read() + "\r\n"
+            self.response = "HTTP/1.1 200 OK\r\nContent-Type: text/css; charset=utf-8\r\n\r\n" + webFile.read() + "\r\n"
         else:
-            self.status404()
-        htmlFile.close()
+            self.response = "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\n\r\n" + webFile.read() + "\r\n"
+        webFile.close()
         return
     
     # When the request item type is dir
@@ -68,7 +68,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         # redirect the the url end with /
         if(requestUrl[-1] != "/"):
             newLocation = "http://127.0.0.1:8080" + requestUrl + "/"
-            self.response = "HTTP/1.1 301 Moved Permanently\r\nLocation: " + newLocation + "\r\n"
+            self.response = "HTTP/1.1 301 Moved Permanently\r\nLocation: " + newLocation + "\r\n\r\n"
         else:
             if(path.isfile(filePath+"index.html")):
                 htmlFile = open(filePath+"index.html")
@@ -96,7 +96,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
     def handleRequestType(self, requestList):
         requestType = requestList[0].split()[0]
         if (requestType != "GET"):
-            self.response = "HTTP/1.1 405 Method Not Allowed\r\n"
+            self.response = "HTTP/1.1 405 Method Not Allowed\r\n\r\n"
             return
         else:
             self.handleUrl(requestList)
